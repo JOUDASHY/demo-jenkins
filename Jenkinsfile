@@ -1,8 +1,8 @@
 pipeline {
     agent any
     tools {
-        maven 'Maven-3.8.4'  // Remplacez par la version de Maven installée dans Jenkins
-        jdk 'jdk-11'         // Remplacez par la version de JDK installée dans Jenkins
+        maven 'maven-3.6.3'  // Version suggérée par l'erreur
+        jdk 'jdk-17'        // Version suggérée par l'erreur
     }
     triggers {
         githubPush()  // Déclenche le pipeline à chaque push sur GitHub
@@ -16,12 +16,24 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn clean package'
+                    } else {
+                        bat 'mvn clean package'
+                    }
+                }
             }
         }
         stage('Test') {
             steps {
-                sh 'mvn test'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn test'
+                    } else {
+                        bat 'mvn test'
+                    }
+                }
             }
             post {
                 always {
