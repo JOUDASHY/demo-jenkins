@@ -13,7 +13,7 @@ pipeline {
                 git branch: 'main',
                     url: 'https://github.com/JOUDASHY/demo-jenkins.git'
             }
-        }
+        } 
         stage('Build') {
             steps {
                 script {
