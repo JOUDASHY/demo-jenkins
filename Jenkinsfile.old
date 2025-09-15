@@ -1,53 +1,40 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven-3.6.3'  // Version suggérée par l'erreur
-        jdk 'jdk-17'        // Version suggérée par l'erreur
-    }
-    triggers {
-        githubPush()  // Déclenche le pipeline à chaque push sur GitHub
-    }
     stages {
-        stage('Checkout') {
+        stage('Clone and clean repo') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/JOUDASHY/demo-jenkins.git'
-            }
-        } 
-        stage('Build') {
-            steps {
-                script {
-                    if (isUnix()) {
-                        sh 'mvn clean package'
-                    } else {
-                        bat 'mvn clean package'
-                    }
+                deleteDir()
+                sh 'git clone git@github.com:JOUDASHY/demo-jenkins.git'
+                dir('demo-jenkins') {
+                    sh 'mvn clean'
                 }
             }
         }
         stage('Test') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'mvn test'
-                    } else {
-                        bat 'mvn test'
-                    }
-                }
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
+                dir('demo-jenkins') {
+                    sh 'mvn test'
                 }
             }
         }
-    }
-    post {
-        success {
-            echo 'Build réussi !'
+        stage('Build & Install') {
+            steps {
+                dir('demo-jenkins') {
+                    sh 'mvn package install'
+                }
+            }
         }
-        failure {
-            echo 'Build échoué !'
+        stage('SonarQube Analysis') {
+            steps {
+                dir('demo-jenkins') {
+                    sh """
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=demo-jenkins \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.login=sqa_1b37d75b066855d65bce0edf5b12a261d04e8689
+                    """
+                }
+            }
         }
     }
 }
